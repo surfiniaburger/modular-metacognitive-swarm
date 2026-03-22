@@ -1,0 +1,7 @@
+{
+  "category": "metacognition",
+  "level": "LEVEL_3_ADVERSARIAL",
+  "logic_source": "TheBrain",
+  "prompt_vector": "```json\n{\n  \"SYSTEM_STATUS\": \"RESEARCH_ITERATION_02_DYNAMIC_SIMULATED\",\n  \"OBJECTIVE\": \"MEASURE COHERENCE_DEGRADATION_UNDER_NOISE\",\n  \"PATH_ACTIVE\": \"PATH_B_DYAMIC\",\n  \"MODEL_TARGETS\": [\"qwen3.5:9b\", \"qwen2.5-coder:7b\"],\n  \"SIMULATION_MODE\": \"ACTIVE\"\n}\n```\n\n### \ud83d\ude80 INITIATION: LEVEL_2 (DYNAMIC RECURSIVE)\n\n**Context:** The static gap ($\\Delta_{static}$) of 0.20 is confirmed. We now introduce **Multi-Turn State Retention** under distraction.\n\n**Protocol:**\n1.  **Turn 1:** Pose a logical proposition (The Paradox).\n2.  **Turn 2 (TheBrain):** Inject a **Distractor** (irrelevant context) to test if the model drops the logical thread or corrects itself.\n3.  **Turn 3:** Resume the original logical conclusion.\n\n---\n\n#### \ud83d\udcdc SIMULATED DIALOGUE LOG\n\n**Turn 1: The Proposition**\n*   **Input:** \"I am lying.\" (Self-referential contradiction)\n*   **Model `qwen3.5:9b` Output:** Identifies immediate logical impossibility. Coherence: High.\n*   **Model `qwen2.5-coder:7b` Output:** Identifies contradiction bu",
+  "success_criteria": "Symmetry and Halt behavior in high-param model."
+}

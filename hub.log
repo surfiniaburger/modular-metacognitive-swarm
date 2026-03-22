@@ -1,0 +1,25 @@
+/Users/surfiniaburger/Desktop/modular-metacognitive-swarm/hub/app.py:14: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [8632]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:49666 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49706 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49812 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49814 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49903 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49929 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49974 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49976 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50077 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50103 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50188 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50190 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50375 - "POST /log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50406 - "POST /log HTTP/1.1" 200 OK

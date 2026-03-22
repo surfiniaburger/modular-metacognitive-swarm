@@ -1,0 +1,21 @@
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                                                                              │
+│                                FastMCP 3.1.1                                 │
+│                            https://gofastmcp.com                             │
+│                                                                              │
+│                   🖥  Server:      research_executor, 3.1.1                   │
+│                   🚀 Deploy free: https://fastmcp.cloud                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+[03/22/26 02:58:07] INFO     Starting MCP server                transport.py:183
+                             'research_executor' with transport                 
+                             'stdio'                                            
