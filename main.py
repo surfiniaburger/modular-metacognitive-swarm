@@ -42,7 +42,7 @@ async def main():
             async for event in runner.run_async(
                 user_id="surfiniaburger",
                 session_id="research_run_01",
-                new_message=types.Content(role="user", parts=[types.Part(text="Start research iteration.")])
+                new_message=types.Content(role="user", parts=[types.Part(text=f"Start research iteration {i}.")])
             ):
                 if event.content:
                     logger.info(f"Mediator Output: {event.content}")
