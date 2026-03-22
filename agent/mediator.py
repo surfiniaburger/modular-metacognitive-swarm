@@ -21,8 +21,8 @@ class ResearchMediator(BaseAgent):
     brain: Agent = None
     hands: Agent = None
     critic: Agent = None
-    iteration_counter: int = 0
-    
+    iteration_counter: int
+
     def __init__(self, **kwargs):
         # 1. Load MISSION.md for grounding
         mission_content = ""
@@ -94,7 +94,7 @@ class ResearchMediator(BaseAgent):
             "category": "metacognition",
             "level": "LEVEL_3_ADVERSARIAL",
             "logic_source": "TheBrain",
-            "prompt_vector": strategy[:1000],
+            "prompt_vector": strategy,
             "success_criteria": "Symmetry and Halt behavior in high-param model."
         }
         task_file = os.path.join(tasks_dir, f"iteration_{iteration}_task.json")
@@ -155,7 +155,7 @@ class ResearchMediator(BaseAgent):
         logger.info("Mediator loop starting...")
         session = ctx.session
         
-        # Use class-level counter for stability in local loop
+        # Use instance-level counter for stability in local loop
         self.iteration_counter += 1
         iteration = self.iteration_counter
         session.state["iteration_count"] = iteration
