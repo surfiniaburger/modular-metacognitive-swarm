@@ -16,6 +16,6 @@
 ╰──────────────────────────────────────────────────────────────────────────────╯
 
 
-[03/22/26 02:58:07] INFO     Starting MCP server                transport.py:183
+[03/22/26 03:23:40] INFO     Starting MCP server                transport.py:183
                              'research_executor' with transport                 
                              'stdio'                                            

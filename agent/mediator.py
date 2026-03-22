@@ -21,10 +21,9 @@ class ResearchMediator(BaseAgent):
     brain: Agent = None
     hands: Agent = None
     critic: Agent = None
+    iteration_counter: int = 0
     
     def __init__(self, **kwargs):
-        # Initialize internal cognitive nodes as Agents
-        # Note: In ADK 1.x, we add these to sub_agents for context propagation
         # 1. Load MISSION.md for grounding
         mission_content = ""
         mission_path = "research_env/docs/MISSION.md"
@@ -75,6 +74,7 @@ class ResearchMediator(BaseAgent):
         self.brain = brain
         self.hands = hands
         self.critic = critic
+        self.iteration_counter = 0
 
     def _persist_results(self, session: Session, strategy: str, review: str):
         """
@@ -87,7 +87,7 @@ class ResearchMediator(BaseAgent):
         os.makedirs(runs_dir, exist_ok=True)
         
         timestamp = datetime.utcnow().isoformat()
-        iteration = session.state.get("iteration_count", 1)
+        iteration = self.iteration_counter
         
         # 1. Export THE TASK (Clean Logic)
         task_packet = {
@@ -111,7 +111,7 @@ class ResearchMediator(BaseAgent):
             "iteration": iteration,
             "metrics": {
                 "dgs": dgs,
-                "m_ratio": 0.885, # Aligned with user's baseline quest
+                "m_ratio": 0.885, 
                 "status": "APPROVED" if "APPROVE" in review.upper() else "REJECTED"
             },
             "models": ["qwen3.5:9b", "qwen2.5-coder:7b"]
@@ -146,7 +146,6 @@ class ResearchMediator(BaseAgent):
         
         packet = f"### MISSION ###\n{mission_content}\n\n### STRATEGY ###\n{session.state.get('strategy_packet', '')}"
         session.state["contextual_packet"] = packet
-        logger.info("Contextual Packet prepared.")
 
     async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
         """
@@ -155,7 +154,10 @@ class ResearchMediator(BaseAgent):
         """
         logger.info("Mediator loop starting...")
         session = ctx.session
-        iteration = session.state.get("iteration_count", 0) + 1
+        
+        # Use class-level counter for stability in local loop
+        self.iteration_counter += 1
+        iteration = self.iteration_counter
         session.state["iteration_count"] = iteration
         
         # 0. Context Preparation
