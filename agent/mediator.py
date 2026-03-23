@@ -263,37 +263,39 @@ class ResearchMediator(BaseAgent):
                 
             review = session.state.get("TheCritic_output", "")
         finally:
-            # 3.5 BENCHMARK: Execute real benchmark and store output key
-            bench_num_tasks = int(os.getenv("BENCH_NUM_TASKS", "120"))
-            bench_seed = int(os.getenv("BENCH_SEED", "42"))
-            bench_full_log = os.getenv("BENCH_LOG_FULL", "0") == "1"
-            try:
-                logger.info("Running benchmark execution...")
-                benchmark_results = run_benchmark(num_tasks=bench_num_tasks, seed=bench_seed, full_log=bench_full_log)
-                save_results(benchmark_results, iteration=iteration, write_latest=True)
-                session.state["benchmark_output"] = benchmark_results
-                summary_text = (
-                    f"BENCHMARK_COMPLETE: DGS={benchmark_results.get('dgs')} "
-                    f"models={list(benchmark_results.get('models', {}).keys())}"
-                )
-                full_json_text = json.dumps(benchmark_results, indent=2)
-                yield Event(
-                    invocation_id=ctx.invocation_id,
-                    author="BenchmarkAgent",
-                    content=types.Content(role='model', parts=[types.Part(text=summary_text)])
-                )
-                yield Event(
-                    invocation_id=ctx.invocation_id,
-                    author="BenchmarkAgent",
-                    content=types.Content(role='model', parts=[types.Part(text=full_json_text)])
-                )
-            except Exception as e:
-                logger.exception("Benchmark execution failed.")
-                yield Event(
-                    invocation_id=ctx.invocation_id,
-                    author="BenchmarkAgent",
-                    content=types.Content(role='model', parts=[types.Part(text=f"BENCHMARK_FAILED: {e}")])
-                )
+            use_a2a_benchmark = os.getenv("USE_A2A_BENCHMARK", "0") == "1"
+            if not use_a2a_benchmark:
+                # 3.5 BENCHMARK: Execute real benchmark and store output key
+                bench_num_tasks = int(os.getenv("BENCH_NUM_TASKS", "120"))
+                bench_seed = int(os.getenv("BENCH_SEED", "42"))
+                bench_full_log = os.getenv("BENCH_LOG_FULL", "0") == "1"
+                try:
+                    logger.info("Running benchmark execution...")
+                    benchmark_results = run_benchmark(num_tasks=bench_num_tasks, seed=bench_seed, full_log=bench_full_log)
+                    save_results(benchmark_results, iteration=iteration, write_latest=True)
+                    session.state["benchmark_output"] = benchmark_results
+                    summary_text = (
+                        f"BENCHMARK_COMPLETE: DGS={benchmark_results.get('dgs')} "
+                        f"models={list(benchmark_results.get('models', {}).keys())}"
+                    )
+                    full_json_text = json.dumps(benchmark_results, indent=2)
+                    yield Event(
+                        invocation_id=ctx.invocation_id,
+                        author="BenchmarkAgent",
+                        content=types.Content(role='model', parts=[types.Part(text=summary_text)])
+                    )
+                    yield Event(
+                        invocation_id=ctx.invocation_id,
+                        author="BenchmarkAgent",
+                        content=types.Content(role='model', parts=[types.Part(text=full_json_text)])
+                    )
+                except Exception as e:
+                    logger.exception("Benchmark execution failed.")
+                    yield Event(
+                        invocation_id=ctx.invocation_id,
+                        author="BenchmarkAgent",
+                        content=types.Content(role='model', parts=[types.Part(text=f"BENCHMARK_FAILED: {e}")])
+                    )
             # 4. Vault Persistence
             try:
                 self._persist_results(session, strategy, review)

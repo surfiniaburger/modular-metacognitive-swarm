@@ -13,14 +13,19 @@ echo "🐚 Starting Research Executor (MCP)..."
 PYTHONPATH=. uv run executor/mcp_server.py > executor.log 2>&1 &
 EXEC_PID=$!
 
-# 3. Give them a moment to boot
+# 3. Start the A2A Benchmark Server (Background)
+echo "🧪 Starting A2A Benchmark Server (Port 8004)..."
+PYTHONPATH=. uv run benchmark_a2a/benchmark_server.py > benchmark.log 2>&1 &
+BENCH_PID=$!
+
+# 4. Give them a moment to boot
 sleep 5
 
-# 4. Run the Mediator
+# 5. Run the Mediator
 echo "🤖 Starting Research Mediator (Main Loop)..."
 PYTHONPATH=. uv run main.py
 
 # Cleanup on exit
 echo "🧹 Cleaning up infrastructure..."
-kill $HUB_PID $EXEC_PID > /dev/null 2>&1
+kill $HUB_PID $EXEC_PID $BENCH_PID > /dev/null 2>&1
 echo "✅ Swarm Retired."
