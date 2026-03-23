@@ -3,6 +3,20 @@
 
 echo "🚀 Launching Gen-2 Modular Swarm Infrastructure..."
 
+# 0. Ensure ports are free
+kill_port() {
+  local port="$1"
+  local pids
+  pids=$(lsof -ti tcp:"$port" 2>/dev/null)
+  if [ -n "$pids" ]; then
+    echo "🧹 Freeing port $port (PID(s): $pids)..."
+    kill $pids 2>/dev/null || true
+    sleep 1
+  fi
+}
+kill_port 8000
+kill_port 8004
+
 # 1. Start the Hub (Background)
 echo "📡 Starting Observability Hub (Port 8000)..."
 PYTHONPATH=. uv run hub/app.py > hub.log 2>&1 &
