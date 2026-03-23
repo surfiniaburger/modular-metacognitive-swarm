@@ -34,7 +34,7 @@ async def main():
     )
     
     # 5. Iteration Loop
-    for i in range(1, 11):
+    for i in range(1, 16):
         logger.info(f"--- Iteration {i} ---")
         try:
             # Kick off the Mediator via runner.run_async
