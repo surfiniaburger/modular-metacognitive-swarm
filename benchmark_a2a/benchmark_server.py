@@ -8,7 +8,7 @@ from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
 from med_safety_gym.executor import Executor
-from .benchmark_agent import BenchmarkAgent
+from benchmark_a2a.benchmark_agent import BenchmarkAgent
 
 logger = logging.getLogger(__name__)
 
