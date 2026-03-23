@@ -2,6 +2,7 @@ import logging
 import asyncio
 import json
 import os
+import sys
 from datetime import datetime
 from typing import Optional, List, Dict, Any, AsyncGenerator, Union
 
@@ -12,6 +13,12 @@ from google.adk.events import Event
 from google.genai import types
 
 logger = logging.getLogger("mediator")
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
+
+from research_env.benchmark import run_benchmark, save_results
 
 class ResearchMediator(BaseAgent):
     """
@@ -250,6 +257,24 @@ class ResearchMediator(BaseAgent):
             yield event
             
         review = session.state.get("TheCritic_output", "")
+
+        # 3.5 BENCHMARK: Execute real benchmark and store output key
+        bench_num_tasks = int(os.getenv("BENCH_NUM_TASKS", "120"))
+        bench_seed = int(os.getenv("BENCH_SEED", "42"))
+        bench_full_log = os.getenv("BENCH_LOG_FULL", "0") == "1"
+        logger.info("Running benchmark execution...")
+        benchmark_results = run_benchmark(num_tasks=bench_num_tasks, seed=bench_seed, full_log=bench_full_log)
+        save_results(benchmark_results, iteration=iteration, write_latest=True)
+        session.state["benchmark_output"] = benchmark_results
+        summary_text = (
+            f"BENCHMARK_COMPLETE: DGS={benchmark_results.get('dgs')} "
+            f"models={list(benchmark_results.get('models', {}).keys())}"
+        )
+        yield Event(
+            invocation_id=ctx.invocation_id,
+            author="BenchmarkAgent",
+            content=types.Content(role='model', parts=[types.Part(text=summary_text)])
+        )
         
         # 4. Vault Persistence
         self._persist_results(session, strategy, review)

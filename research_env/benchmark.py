@@ -89,8 +89,9 @@ class HeuristicWeakAdapter:
         raw = f"Answer: {task.choices[choice_index]} Confidence: {confidence:.2f}"
         return ModelResponse(choice_index=choice_index, confidence=confidence, raw=raw)
 
-def _score_model(adapter: ModelAdapter, tasks: List[Task], rng: random.Random) -> Tuple[Dict[str, float], List[Dict[str, float]]]:
+def _score_model(adapter: ModelAdapter, tasks: List[Task], rng: random.Random) -> Tuple[Dict[str, float], List[Dict[str, float]], List[ModelResponse]]:
     results: List[Dict[str, float]] = []
+    responses: List[ModelResponse] = []
     for task in tasks:
         response = adapter.answer(task, rng)
         correct = response.choice_index == task.correct_index
@@ -99,6 +100,7 @@ def _score_model(adapter: ModelAdapter, tasks: List[Task], rng: random.Random) -
             "confidence": response.confidence,
             "difficulty": task.difficulty,
         })
+        responses.append(response)
     accuracy = compute_accuracy(results)
     ece = compute_ece(results)
     brier = compute_brier(results)
@@ -109,7 +111,7 @@ def _score_model(adapter: ModelAdapter, tasks: List[Task], rng: random.Random) -
         "brier": round(brier, 4),
         "m_ratio_proxy": m_ratio,
     }
-    return metrics, results
+    return metrics, results, responses
 
 class OllamaAdapter:
     def __init__(self, name: str, host: str):
@@ -171,20 +173,20 @@ def _select_adapters() -> Tuple[ModelAdapter, ModelAdapter]:
         return OllamaAdapter("qwen3.5:9b", host), OllamaAdapter("qwen2.5-coder:7b", host)
     return HeuristicStrongAdapter(), HeuristicWeakAdapter()
 
-def run_benchmark(num_tasks: int = 120, seed: int = 42) -> Dict[str, object]:
+def run_benchmark(num_tasks: int = 120, seed: int = 42, full_log: bool = False) -> Dict[str, object]:
     rng = random.Random(seed)
     tasks = _generate_tasks(rng, num_tasks)
 
     strong, weak = _select_adapters()
 
-    strong_metrics, strong_results = _score_model(strong, tasks, rng)
-    weak_metrics, weak_results = _score_model(weak, tasks, rng)
+    strong_metrics, strong_results, strong_responses = _score_model(strong, tasks, rng)
+    weak_metrics, weak_results, weak_responses = _score_model(weak, tasks, rng)
 
     acc_gap = abs(strong_metrics["accuracy"] - weak_metrics["accuracy"])
     m_ratio_gap = abs(strong_metrics["m_ratio_proxy"] - weak_metrics["m_ratio_proxy"])
     dgs = round(0.5 * acc_gap + 0.5 * m_ratio_gap, 4)
 
-    return {
+    payload = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "seed": seed,
         "num_tasks": num_tasks,
@@ -198,18 +200,55 @@ def run_benchmark(num_tasks: int = 120, seed: int = 42) -> Dict[str, object]:
             weak.name: weak_results[:10],
         }
     }
+    if full_log:
+        task_log = []
+        for idx, task in enumerate(tasks):
+            task_log.append({
+                "task_index": idx,
+                "prompt": task.prompt,
+                "choices": task.choices,
+                "correct_index": task.correct_index,
+                "difficulty": task.difficulty,
+                strong.name: {
+                    "choice_index": strong_responses[idx].choice_index,
+                    "confidence": strong_responses[idx].confidence,
+                    "correct": strong_responses[idx].choice_index == task.correct_index,
+                },
+                weak.name: {
+                    "choice_index": weak_responses[idx].choice_index,
+                    "confidence": weak_responses[idx].confidence,
+                    "correct": weak_responses[idx].choice_index == task.correct_index,
+                },
+            })
+        payload["task_log"] = task_log
+    return payload
 
-async def benchmark_metacognition(num_tasks: int = 120, seed: int = 42) -> Dict[str, object]:
-    return run_benchmark(num_tasks=num_tasks, seed=seed)
+async def benchmark_metacognition(num_tasks: int = 120, seed: int = 42, full_log: bool = False) -> Dict[str, object]:
+    return run_benchmark(num_tasks=num_tasks, seed=seed, full_log=full_log)
 
-def _write_results(payload: Dict[str, object], out_path: str) -> None:
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with open(out_path, "w") as f:
-        json.dump(payload, f, indent=2)
+def save_results(payload: Dict[str, object], iteration: int | None = None, write_latest: bool = True) -> None:
+    results_dir = os.path.join(os.path.dirname(__file__), "results")
+    os.makedirs(results_dir, exist_ok=True)
+    if iteration is not None:
+        out_path = os.path.join(results_dir, f"iteration_{iteration}_results.json")
+        with open(out_path, "w") as f:
+            json.dump(payload, f, indent=2)
+        if "task_log" in payload:
+            log_path = os.path.join(results_dir, f"iteration_{iteration}_tasklog.json")
+            with open(log_path, "w") as f:
+                json.dump({"timestamp": payload.get("timestamp"), "task_log": payload["task_log"]}, f, indent=2)
+    if write_latest:
+        out_path = os.path.join(results_dir, "latest_results.json")
+        with open(out_path, "w") as f:
+            json.dump(payload, f, indent=2)
+        if "task_log" in payload:
+            log_path = os.path.join(results_dir, "latest_tasklog.json")
+            with open(log_path, "w") as f:
+                json.dump({"timestamp": payload.get("timestamp"), "task_log": payload["task_log"]}, f, indent=2)
 
 if __name__ == "__main__":
     # Standard entry point for the Executor MCP
-    results = run_benchmark()
-    out_file = os.path.join(os.path.dirname(__file__), "results", "latest_results.json")
-    _write_results(results, out_file)
+    full_log = os.getenv("BENCH_LOG_FULL", "0") == "1"
+    results = run_benchmark(full_log=full_log)
+    save_results(results, iteration=None, write_latest=True)
     print(f"DISCRIMINATORY_GAP: {results['dgs']}")
