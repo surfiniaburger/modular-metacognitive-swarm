@@ -4,6 +4,7 @@ import os
 import random
 import re
 import sys
+import time
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -89,10 +90,15 @@ class HeuristicWeakAdapter:
         raw = f"Answer: {task.choices[choice_index]} Confidence: {confidence:.2f}"
         return ModelResponse(choice_index=choice_index, confidence=confidence, raw=raw)
 
-def _score_model(adapter: ModelAdapter, tasks: List[Task], rng: random.Random) -> Tuple[Dict[str, float], List[Dict[str, float]], List[ModelResponse]]:
+def _score_model(adapter: ModelAdapter, tasks: List[Task], rng: random.Random, max_seconds: float | None = None) -> Tuple[Dict[str, float], List[Dict[str, float]], List[ModelResponse]]:
     results: List[Dict[str, float]] = []
     responses: List[ModelResponse] = []
+    started = time.time()
+    skipped = 0
     for task in tasks:
+        if max_seconds is not None and (time.time() - started) > max_seconds:
+            skipped += 1
+            continue
         response = adapter.answer(task, rng)
         correct = response.choice_index == task.correct_index
         results.append({
@@ -110,6 +116,8 @@ def _score_model(adapter: ModelAdapter, tasks: List[Task], rng: random.Random) -
         "ece": round(ece, 4),
         "brier": round(brier, 4),
         "m_ratio_proxy": m_ratio,
+        "tasks_completed": len(results),
+        "tasks_skipped": skipped,
     }
     return metrics, results, responses
 
@@ -199,8 +207,10 @@ def run_benchmark(num_tasks: int = 120, seed: int = 42, full_log: bool = False) 
 
     strong, weak = _select_adapters()
 
-    strong_metrics, strong_results, strong_responses = _score_model(strong, tasks, rng)
-    weak_metrics, weak_results, weak_responses = _score_model(weak, tasks, rng)
+    per_model_max = os.getenv("BENCH_PER_MODEL_MAX_SECONDS")
+    per_model_max_s = float(per_model_max) if per_model_max else None
+    strong_metrics, strong_results, strong_responses = _score_model(strong, tasks, rng, max_seconds=per_model_max_s)
+    weak_metrics, weak_results, weak_responses = _score_model(weak, tasks, rng, max_seconds=per_model_max_s)
 
     acc_gap = abs(strong_metrics["accuracy"] - weak_metrics["accuracy"])
     m_ratio_gap = abs(strong_metrics["m_ratio_proxy"] - weak_metrics["m_ratio_proxy"])
