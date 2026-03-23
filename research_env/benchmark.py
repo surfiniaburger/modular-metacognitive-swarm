@@ -117,6 +117,10 @@ class OllamaAdapter:
     def __init__(self, name: str, host: str):
         self.name = name
         self.host = host.rstrip("/")
+        self.timeout_s = float(os.getenv("OLLAMA_TIMEOUT", "30"))
+        self.max_retries = int(os.getenv("OLLAMA_RETRIES", "2"))
+        self.retry_backoff = float(os.getenv("OLLAMA_BACKOFF", "1.5"))
+        self.sleep_between = float(os.getenv("OLLAMA_SLEEP", "0.1"))
 
     def _build_prompt(self, task: Task) -> str:
         return (
@@ -140,10 +144,22 @@ class OllamaAdapter:
         }
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            body = resp.read().decode("utf-8")
-        parsed = json.loads(body)
-        return parsed.get("response", "")
+        last_err = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=self.timeout_s) as resp:
+                    body = resp.read().decode("utf-8")
+                parsed = json.loads(body)
+                if self.sleep_between > 0:
+                    import time
+                    time.sleep(self.sleep_between)
+                return parsed.get("response", "")
+            except Exception as e:
+                last_err = e
+                if attempt < self.max_retries:
+                    import time
+                    time.sleep(self.retry_backoff * (attempt + 1))
+        raise last_err
 
     def _parse_response(self, text: str) -> Tuple[int, float]:
         # Try JSON first
@@ -162,13 +178,17 @@ class OllamaAdapter:
 
     def answer(self, task: Task, rng: random.Random) -> ModelResponse:
         prompt = self._build_prompt(task)
-        raw = self._call_ollama(prompt)
-        choice_index, confidence = self._parse_response(raw)
-        return ModelResponse(choice_index=choice_index, confidence=confidence, raw=raw)
+        try:
+            raw = self._call_ollama(prompt)
+            choice_index, confidence = self._parse_response(raw)
+            return ModelResponse(choice_index=choice_index, confidence=confidence, raw=raw)
+        except Exception:
+            # Timeout or transient failure; return neutral response to keep run moving.
+            return ModelResponse(choice_index=0, confidence=0.5, raw="ERROR: timeout")
 
 def _select_adapters() -> Tuple[ModelAdapter, ModelAdapter]:
     use_ollama = os.getenv("USE_OLLAMA", "0") == "1"
-    host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    host = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
     if use_ollama:
         return OllamaAdapter("qwen3.5:9b", host), OllamaAdapter("qwen2.5-coder:7b", host)
     return HeuristicStrongAdapter(), HeuristicWeakAdapter()
