@@ -1,11 +1,14 @@
 import asyncio
 import logging
+import json
+import os
 from agent.mediator import ResearchMediator
 from shared.hub_client import HubClient
 from google.adk.runners import Runner
 from google.adk.sessions.in_memory_session_service import InMemorySessionService
 from google.adk.memory.in_memory_memory_service import InMemoryMemoryService
 from google.genai import types
+from med_safety_gym.messenger import send_message
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +37,7 @@ async def main():
     )
     
     # 5. Iteration Loop
-    for i in range(1, 11):
+    for i in range(1, 16):
         logger.info(f"--- Iteration {i} ---")
         try:
             # Kick off the Mediator via runner.run_async
@@ -51,6 +54,30 @@ async def main():
         except Exception as e:
             logger.error(f"Iteration {i} failed: {e}")
             await hub.log_event("ERROR", str(e))
+
+        # Optional A2A benchmark after each mediator iteration
+        if os.getenv("USE_A2A_BENCHMARK", "0") == "1":
+            bench_url = os.getenv("A2A_BENCH_URL", "http://localhost:8004")
+            bench_tasks = int(os.getenv("BENCH_NUM_TASKS", "40"))
+            bench_seed = int(os.getenv("BENCH_SEED", "42"))
+            bench_full_log = os.getenv("BENCH_LOG_FULL", "0") == "1"
+            bench_timeout = int(os.getenv("A2A_BENCH_TIMEOUT", "600"))
+            request_payload = json.dumps({
+                "num_tasks": bench_tasks,
+                "seed": bench_seed,
+                "full_log": bench_full_log,
+                "iteration": i
+            })
+            try:
+                response = await send_message(
+                    message=request_payload,
+                    base_url=bench_url,
+                    timeout=bench_timeout,
+                )
+                await hub.log_event("BENCHMARK_A2A", response.get("response", ""))
+            except Exception as e:
+                logger.error(f"A2A benchmark failed: {e}")
+                await hub.log_event("BENCHMARK_A2A_ERROR", str(e))
         
         await asyncio.sleep(5)  # Cooldown between cognitive cycles
 

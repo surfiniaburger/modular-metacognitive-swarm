@@ -33,3 +33,16 @@ This repository implements a **Sovereign Agent** and **Stateless Executor** arch
 - **No AST Hardcoding**: Patching is a delegated tool, not a coordinator duty.
 - **Dependency Isolation**: The Hub, Agent, and Executor can have separate environments.
 - **Standardized ADK**: Uses native ADK `Agent` classes for all cognitive steps.
+
+## References
+This project is grounded in established cognitive science and multi-agent systems research:
+
+- **Metacognitive Efficiency (M-Ratio)**: 
+  - Fleming, S. M., & Lau, H. C. (2014). "How to measure metacognition". *Frontiers in Human Neuroscience*. [DOI: 10.3389/fnhum.2014.00443](https://doi.org/10.3389/fnhum.2014.00443)
+  - Key concept utilized: `meta-d' / d'` for signal-sharpening in LLM benchmarking.
+
+- **DeepMind AGI Cognitive Framework**:
+  - Burnell, R., et al. (2026). "Measuring Progress Toward AGI: A Cognitive Framework". *Google DeepMind Technical Report*.
+  - This swarm implements the **Metacognition** and **Executive Function** faculties defined in the Burnell et al. Cognitive Taxonomy to quantify the "Discriminatory Gap" between local models.
+
+- **Project Metadata**: See [chandra_packet.json](research_env/docs/chandra_packet.json) for specific signal-sharpening heuristics.
