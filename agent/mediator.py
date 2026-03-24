@@ -122,15 +122,15 @@ class ResearchMediator(BaseAgent):
         # 2. Export THE RUN (Performance)
         dgs = latest_metrics.get("dgs", 0.5)
         m_ratio = None
-            if isinstance(latest_metrics.get("models"), dict) and latest_metrics["models"]:
-                # Choose the model with the highest accuracy for m_ratio
-                best_model_name = max(
-                    latest_metrics["models"],
-                    key=lambda m: latest_metrics["models"][m].get("accuracy", 0)
-                )
-                model_metrics = latest_metrics["models"].get(best_model_name)
-                if isinstance(model_metrics, dict):
-                    m_ratio = model_metrics.get("m_ratio_proxy")
+        if isinstance(latest_metrics.get("models"), dict) and latest_metrics["models"]:
+            # Choose the model with the highest accuracy for m_ratio
+            best_model_name = max(
+                latest_metrics["models"],
+                key=lambda m: latest_metrics["models"][m].get("accuracy", 0)
+            )
+            model_metrics = latest_metrics["models"].get(best_model_name)
+            if isinstance(model_metrics, dict):
+                m_ratio = model_metrics.get("m_ratio_proxy")
 
         run_packet = {
             "timestamp": timestamp,
