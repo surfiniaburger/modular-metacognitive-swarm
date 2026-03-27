@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-03-22T04:24:46.895981",
+  "timestamp": "2026-03-27T01:42:02.504252",
   "iteration": 7,
   "metrics": {
-    "dgs": 0.5,
-    "m_ratio": 0.885,
+    "dgs": 0.262,
+    "m_ratio": 1.0,
     "status": "REJECTED"
   },
   "models": [
